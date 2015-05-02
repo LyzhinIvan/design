@@ -1,10 +1,13 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using NUnit.Framework;
 
 namespace DependencyElimination
 {
@@ -13,41 +16,83 @@ namespace DependencyElimination
 		private static void Main(string[] args)
 		{
 			var sw = Stopwatch.StartNew();
-			using (var http = new HttpClient())
-			{
-				using (var output = new StreamWriter("links.txt", false))
-					for (int page = 1; page < 6; page++)
-					{
-						var url = "http://habrahabr.ru/top/page" + page;
-						Console.WriteLine(url);
-						var habrResponse = http.GetAsync(url).Result;
-						if (habrResponse.IsSuccessStatusCode)
-							ParseResponse(habrResponse, output).Wait();
-						else
-						{
-							Console.WriteLine("Error: " + habrResponse.StatusCode + " " + habrResponse.ReasonPhrase);
-						}
-					}
-			}
-			Console.WriteLine("Total links found: {0}", totalLinks);
+		    Action<string> logger = (Console.WriteLine);
+		    IEnumerable<string> urls = GetUrls();
+		    IEnumerable<string> links = GetAllLinks(urls, logger);
+		    File.WriteAllLines("links.txt", links);
 			Console.WriteLine("Finished");
 			Console.WriteLine(sw.Elapsed);
 		}
 
-		private static int totalLinks = 0;
+	    private static IEnumerable<string> GetUrls()
+	    {
+             for (int page = 1; page < 6; page++)
+                yield return ("http://habrahabr.ru/top/page" + page);
+	    }
 
-		private static async Task ParseResponse(HttpResponseMessage response, StreamWriter output)
-		{
-			string content = await response.Content.ReadAsStringAsync();
-			var matches = Regex.Matches(content, @"\Whref=[""'](.*?)[""'\s>]").Cast<Match>();
-			var count = 0;
-			foreach (var match in matches)
-			{
-				output.WriteLine(match.Groups[1].Value);
-				totalLinks++;
-				count++;
-			}
-			Console.WriteLine("found {0} links", count);
-		}
+	    private static IEnumerable<string> GetAllLinks(IEnumerable<string> urls, Action<string> logger = null)
+	    {
+	        if (logger == null) logger = delegate(string s) { };
+	        var allLinks = new List<string>();
+            foreach (var url in urls)
+            {
+                logger("url: " + url);
+                string[] links;
+                string errorMessage;
+                if (GetLinksFromUrl(url, out links, out errorMessage))
+                {
+                    logger("found links: " + links.Count());
+                    allLinks.AddRange(links);
+                }
+                else
+                {
+                    logger(errorMessage);
+                }
+            }
+            logger("Total links found: " + allLinks.Count);
+            return allLinks;
+	    }
+        
+	    private static bool GetLinksFromUrl(string url, out string[] links, out string errorMessage)
+	    {
+
+	        string content;
+	        if (GetContent(url, out content, out errorMessage))
+	        {
+	            links = GetLinksFromContent(content);
+	            return true;
+	        }
+	        else
+	        {
+	            links = new string[0];
+	            return false;
+	        }
+	    }
+
+	    private static string[] GetLinksFromContent(string content)
+	    {
+            var matches = Regex.Matches(content, @"\Whref=[""'](.*?)[""'\s>]").Cast<Match>();
+            return matches.Select(match => match.Groups[1].Value).ToArray();
+	    }
+
+	    private static bool GetContent(string url, out string content, out string errorMessage)
+	    {
+	        using (var http = new HttpClient())
+	        {
+                var response = http.GetAsync(url).Result;
+	            if (response.IsSuccessStatusCode)
+	            {
+	                errorMessage = null;
+	                content = response.Content.ReadAsStringAsync().Result;
+	                return true;
+	            }
+	            else
+	            {
+	                errorMessage = "Error: " + response.StatusCode + " " + response.ReasonPhrase;
+	                content = null;
+	                return false;
+	            }
+	        }
+	    }
 	}
 }
