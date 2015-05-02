@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using DIContainer.Commands;
@@ -20,12 +21,12 @@ namespace DIContainer
 
         static void Main(string[] args)
         {
-            //args = new string[] {"help"};
             var container = new StandardKernel();
             container.Bind<ICommand>().To<TimerCommand>();
             container.Bind<ICommand>().To<PrintTimeCommand>();
             container.Bind<ICommand>().To<HelpCommand>();
             container.Bind<CommandLineArgs>().ToSelf().WithConstructorArgument(args);
+            container.Bind<TextWriter>().ToConstant(Console.Out);
             var program = container.Get<Program>();
             program.Run();
         }

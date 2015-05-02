@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -12,16 +13,16 @@ namespace DIContainer.Commands
         [Inject]
         public Lazy<IEnumerable<ICommand>> commandsList { get; set; }
 
-        public HelpCommand()
+        public HelpCommand(TextWriter writer)
+            : base(writer)
         {
-
         }
 
         public override void Execute()
         {
             foreach (var command in commandsList.Value)
             {
-                Console.WriteLine(command.Name);
+                Writer.WriteLine(command.Name);
             }
         }
     }
