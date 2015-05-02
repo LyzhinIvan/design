@@ -41,6 +41,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Behavior.cs" />
+    <Compile Include="Commands\ICommand.cs" />
+    <Compile Include="Commands\DelayCommand.cs" />
+    <Compile Include="Commands\JumpCommand.cs" />
+    <Compile Include="Commands\SayCommand.cs" />
+    <Compile Include="Commands\UntilCommand.cs" />
     <Compile Include="JumpHeight.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
