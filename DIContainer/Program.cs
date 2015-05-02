@@ -10,20 +10,21 @@ namespace DIContainer
     public class Program
     {
         private readonly CommandLineArgs arguments;
-        private readonly ICommand[] commands;
+        private readonly ICommand[] commands;   
 
         public Program(CommandLineArgs arguments, params ICommand[] commands)
         {
             this.arguments = arguments;
             this.commands = commands;
-        
         }
 
         static void Main(string[] args)
         {
+            //args = new string[] {"help"};
             var container = new StandardKernel();
             container.Bind<ICommand>().To<TimerCommand>();
             container.Bind<ICommand>().To<PrintTimeCommand>();
+            container.Bind<ICommand>().To<HelpCommand>();
             container.Bind<CommandLineArgs>().ToSelf().WithConstructorArgument(args);
             var program = container.Get<Program>();
             program.Run();
